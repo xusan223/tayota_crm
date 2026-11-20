@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tizimga kirish | Toyota CRM</title>
+  <link rel="stylesheet" href="{% static 'crm/css/app.css' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="login-page min-h-screen bg-slate-100 text-ink antialiased">
+  <main class="mx-auto flex min-h-screen max-w-7xl items-center justify-center p-4 sm:p-8">
+    <div class="login-shell grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid-cols-2">
+      <section class="login-brand relative hidden flex-col justify-between overflow-hidden bg-ink p-10 text-white lg:flex">
+        <div class="login-glow" aria-hidden="true"></div>
+        <a href="{% url 'login' %}" class="relative z-10 flex w-fit items-center gap-3 text-white no-underline">
+          <span class="grid h-11 w-11 place-items-center rounded-xl bg-toyota text-xl font-black">T</span>
+          <span><span class="block font-bold tracking-[.16em]">TOYOTA</span><span class="block text-xs text-white/55">Dilerlik CRM</span></span>
+        </a>
+        <div class="relative z-10 max-w-md">
+          <p class="mb-4 text-xs font-bold uppercase tracking-[.22em] text-red-400">Toyota dilerlik markazi</p>
+          <h1 class="text-4xl font-black leading-tight">Savdoni boshqaring.<br><span class="text-red-500">Mijozlarni qadrlang.</span></h1>
+          <p class="mt-5 max-w-sm text-sm leading-6 text-white/60">Mijozlar, avtomobillar ombori va bitimlar holatini bitta qulay tizimda kuzating.</p>
+        </div>
+        <p class="relative z-10 text-xs text-white/40">Toyota CRM &copy; 2026</p>
+      </section>
+
+      <section class="flex items-center justify-center px-6 py-10 sm:px-12 lg:px-14">
+        <div class="w-full max-w-md">
+          <div class="mb-9 lg:hidden">
+            <div class="flex items-center gap-3">
+              <span class="grid h-11 w-11 place-items-center rounded-xl bg-toyota text-xl font-black text-white">T</span>
+              <span><span class="block font-bold tracking-[.16em]">TOYOTA</span><span class="block text-xs text-slate-500">Dilerlik CRM</span></span>
+            </div>
+          </div>
+          <p class="text-sm font-bold uppercase tracking-[.16em] text-toyota">Xush kelibsiz</p>
+          <h2 class="mt-2 text-3xl font-extrabold">Tizimga kirish</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-500">Davom etish uchun foydalanuvchi nomi va parolingizni kiriting.</p>
+
+          {% if form.non_field_errors %}
+            <div role="alert" class="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+
+          <form method="post" class="mt-7 space-y-5">
+            {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div>
+              <label for="{{ form.username.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-700">Foydalanuvchi nomi</label>
+              {{ form.username }}
+              {% for error in form.username.errors %}<p class="mt-1 text-sm text-red-700">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+              <label for="{{ form.password.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-700">Parol</label>
+              {{ form.password }}
+              {% for error in form.password.errors %}<p class="mt-1 text-sm text-red-700">{{ error }}</p>{% endfor %}
+            </div>
+            {% if form.errors and not form.non_field_errors %}
+              <p role="alert" class="text-sm text-red-700">Kiritilgan ma’lumotlarni tekshirib qayta urinib ko‘ring.</p>
+            {% endif %}
+            <button type="submit" class="w-full rounded-xl bg-toyota px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-900/15 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">Kirish</button>
+          </form>
+          <p class="mt-7 text-center text-xs text-slate-400">Kirish ma’lumotlari admin tomonidan beriladi.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
