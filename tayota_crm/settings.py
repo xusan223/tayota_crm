@@ -113,8 +113,31 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 WHITENOISE_USE_FINDERS = DEBUG
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Generated documents (invoice PDFs) go to a private S3 bucket when one is
+# configured. On AWS the EC2 instance role supplies the credentials, so no
+# access keys live in settings or environment properties. Files are always
+# streamed through the app after a permission check, never linked directly.
+DOCUMENTS_BUCKET = os.environ.get("DJANGO_S3_DOCUMENTS_BUCKET", "").strip()
+if DOCUMENTS_BUCKET:
+    DEFAULT_STORAGE = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": DOCUMENTS_BUCKET,
+            "region_name": os.environ.get("AWS_REGION", "us-east-1"),
+            "default_acl": None,
+            "querystring_auth": True,
+            "file_overwrite": False,
+            "object_parameters": {"ServerSideEncryption": "AES256"},
+        },
+    }
+else:
+    DEFAULT_STORAGE = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": DEFAULT_STORAGE,
     "staticfiles": {
         "BACKEND": (
             "whitenoise.storage.CompressedManifestStaticFilesStorage"

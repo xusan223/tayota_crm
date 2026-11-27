@@ -35,6 +35,39 @@ body {
   border-color: #EB0A1E;
 }
 
+.field {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 0.75rem 1rem;
+  color: #111111;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field:focus {
+  border-color: #EB0A1E;
+  box-shadow: 0 0 0 3px rgb(235 10 30 / 12%);
+}
+
+.bar {
+  transform-origin: left;
+  animation: bar-grow 500ms ease-out;
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .login-page {
   background:
     radial-gradient(circle at 12% 12%, rgb(235 10 30 / 7%), transparent 26rem),

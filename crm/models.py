@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class StaffProfile(models.Model):
@@ -110,6 +111,7 @@ class Deal(models.Model):
         "Bosqich", max_length=30, choices=Stage.choices, default=Stage.NEW
     )
     total_price = models.DecimalField("Bitim summasi", max_digits=14, decimal_places=2)
+    created_at = models.DateTimeField("Yaratilgan vaqt", default=timezone.now)
 
     class Meta:
         ordering = ["-pk"]
@@ -118,3 +120,110 @@ class Deal(models.Model):
 
     def __str__(self):
         return f"{self.customer.name} — {self.get_stage_display()}"
+
+    @property
+    def next_stage(self):
+        values = self.Stage.values
+        index = values.index(self.stage)
+        return values[index + 1] if index + 1 < len(values) else None
+
+    @property
+    def previous_stage(self):
+        values = self.Stage.values
+        index = values.index(self.stage)
+        return values[index - 1] if index > 0 else None
+
+    @property
+    def can_have_invoice(self):
+        return self.stage in {self.Stage.CONTRACT, self.Stage.SOLD}
+
+
+class Note(models.Model):
+    customer = models.ForeignKey(
+        Customer, verbose_name="Mijoz", on_delete=models.CASCADE, related_name="notes"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Muallif",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="crm_notes",
+    )
+    text = models.TextField("Izoh", max_length=2000)
+    created_at = models.DateTimeField("Yozilgan vaqt", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name = "Izoh"
+        verbose_name_plural = "Izohlar"
+
+    def __str__(self):
+        return f"{self.customer.name}: {self.text[:40]}"
+
+
+class Task(models.Model):
+    class Kind(models.TextChoices):
+        CALL = "call", "Qo‘ng‘iroq"
+        TEST_DRIVE = "test_drive", "Test-drayv"
+        MEETING = "meeting", "Uchrashuv"
+        OTHER = "other", "Boshqa"
+
+    customer = models.ForeignKey(
+        Customer, verbose_name="Mijoz", on_delete=models.CASCADE, related_name="tasks"
+    )
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Mas’ul",
+        on_delete=models.CASCADE,
+        related_name="crm_tasks",
+    )
+    kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.CALL)
+    title = models.CharField("Vazifa", max_length=200)
+    due_at = models.DateTimeField("Muddat")
+    is_done = models.BooleanField("Bajarildi", default=False)
+    created_at = models.DateTimeField("Yaratilgan vaqt", auto_now_add=True)
+
+    class Meta:
+        ordering = ["is_done", "due_at", "pk"]
+        verbose_name = "Vazifa"
+        verbose_name_plural = "Vazifalar"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_overdue(self):
+        return not self.is_done and self.due_at < timezone.now()
+
+
+def document_upload_to(instance, filename):
+    return f"documents/{timezone.now():%Y/%m}/{filename}"
+
+
+class Document(models.Model):
+    class Kind(models.TextChoices):
+        INVOICE = "invoice", "Invoice"
+
+    deal = models.ForeignKey(
+        Deal, verbose_name="Bitim", on_delete=models.CASCADE, related_name="documents"
+    )
+    kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.INVOICE)
+    title = models.CharField("Nomi", max_length=200)
+    file = models.FileField("Fayl", upload_to=document_upload_to)
+    size = models.PositiveIntegerField("Hajmi (bayt)", default=0)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Yaratgan",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="crm_documents",
+    )
+    created_at = models.DateTimeField("Yaratilgan vaqt", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name = "Hujjat"
+        verbose_name_plural = "Hujjatlar"
+
+    def __str__(self):
+        return self.title

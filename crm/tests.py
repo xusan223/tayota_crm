@@ -27,7 +27,7 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Sotuv voronkasi")
         self.assertContains(response, "Camry")
         self.assertContains(response, "crm/css/app.css")
-        self.assertContains(response, "crm/js/app.js?v=2")
+        self.assertContains(response, "crm/js/app.js?v=3")
         self.assertEqual(response.context["cars_in_stock"], 1)
 
     def test_dashboard_requires_login(self):

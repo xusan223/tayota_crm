@@ -7,3 +7,4 @@ __pycache__
 aws_initial_data.json
 staticfiles
 .elasticbeanstalk
+media

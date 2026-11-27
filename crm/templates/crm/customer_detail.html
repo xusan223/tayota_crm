@@ -1,0 +1,91 @@
+{% extends "crm/base.html" %}
+
+{% block title %}{{ customer.name }} | Toyota CRM{% endblock %}
+{% block page_title %}Mijoz kartochkasi{% endblock %}
+
+{% block content %}
+<a href="{% url 'dashboard' %}#customers" class="mb-5 inline-flex text-sm font-semibold text-slate-500 hover:text-ink">← Mijozlar ro‘yxati</a>
+
+<section class="mb-6 flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center">
+  <div class="flex items-center gap-4">
+    <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-red-50 text-xl font-black text-toyota">{{ customer.name|slice:":1" }}</div>
+    <div><h2 class="text-2xl font-extrabold">{{ customer.name }}</h2><p class="mt-1 text-sm text-slate-500">{{ customer.phone }} · Qo‘shilgan: {{ customer.created_at|date:"d.m.Y H:i" }}</p></div>
+  </div>
+  <div class="rounded-xl bg-slate-50 px-4 py-3 text-sm"><p class="text-xs font-semibold uppercase text-slate-400">Qiziqqan avtomobil</p><p class="mt-1 font-bold">{{ customer.interested_car|default:"Tanlanmagan" }}</p></div>
+</section>
+
+<div class="grid gap-6 xl:grid-cols-3">
+  <div class="space-y-6 xl:col-span-2">
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 class="font-bold">Bitimlar</h3><p class="mt-1 text-sm text-slate-500">Bosqichni o‘zgartiring yoki invoice yarating</p>
+      <div class="mt-5 space-y-4">
+        {% for deal in customer_deals %}
+        <article class="rounded-xl border border-slate-200 p-4">
+          <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+            <div><p class="text-xs text-slate-400">Bitim #{{ deal.pk }} · {{ deal.created_at|date:"d.m.Y" }}</p><p class="mt-1 text-lg font-black">{{ deal.total_price|floatformat:0 }} so‘m</p><p class="mt-1 text-xs text-slate-500">Menejer: {{ deal.manager.get_full_name|default:deal.manager.username }}</p></div>
+            <form method="post" action="{% url 'deal-stage' deal.pk %}" class="flex items-center gap-2">
+              {% csrf_token %}<input type="hidden" name="next" value="{% url 'customer-detail' customer.pk %}">
+              <label for="stage-{{ deal.pk }}" class="sr-only">Bitim bosqichi</label>
+              <select id="stage-{{ deal.pk }}" name="stage" class="field py-2">{% for value, label in stages %}<option value="{{ value }}"{% if deal.stage == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+              <button type="submit" class="rounded-lg bg-ink px-3 py-2 text-xs font-bold text-white hover:bg-slate-700">O‘zgartirish</button>
+            </form>
+          </div>
+          <div class="mt-4 border-t border-slate-100 pt-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs font-semibold uppercase text-slate-400">Hujjatlar</p>
+              {% if deal.can_have_invoice %}
+              <form method="post" action="{% url 'deal-invoice' deal.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'customer-detail' customer.pk %}"><button type="submit" class="rounded-lg bg-toyota px-3 py-2 text-xs font-bold text-white hover:bg-red-700">+ Invoice PDF yaratish</button></form>
+              {% else %}<span class="text-xs text-slate-400">Invoice “Shartnoma” bosqichidan boshlab yaratiladi</span>{% endif %}
+            </div>
+            <ul class="mt-3 space-y-2">
+              {% for document in deal.documents.all %}
+              <li class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm"><span><span class="font-semibold">{{ document.title }}</span><span class="block text-xs text-slate-500">{{ document.created_at|date:"d.m.Y H:i" }} · {{ document.size|filesizeformat }} · {{ document.created_by.get_full_name|default:document.created_by.username|default:"—" }}</span></span><a href="{% url 'document-download' document.pk %}" class="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-100">⇩ Yuklab olish</a></li>
+              {% empty %}<li class="text-xs text-slate-400">Hujjatlar yo‘q.</li>{% endfor %}
+            </ul>
+          </div>
+        </article>
+        {% empty %}<p class="py-6 text-center text-sm text-slate-500">Sizga biriktirilgan bitim yo‘q.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h3 class="font-bold">Muloqot tarixi</h3><p class="mt-1 text-sm text-slate-500">Qo‘ng‘iroqlar, uchrashuvlar va kelishuvlar haqida izohlar</p>
+      <form method="post" action="{% url 'customer-add-note' customer.pk %}" class="mt-4 space-y-3">
+        {% csrf_token %}
+        <label for="note-text" class="sr-only">Yangi izoh</label>
+        <textarea id="note-text" name="text" required maxlength="2000" rows="3" class="field" placeholder="Masalan: Qo‘ng‘iroq qilindi, shanba kuni salonga keladi."></textarea>
+        <div class="flex justify-end"><button type="submit" class="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700">Izoh qo‘shish</button></div>
+      </form>
+      <ol class="mt-5 space-y-4 border-l-2 border-slate-100 pl-5">
+        {% for note in notes %}
+        <li><p class="text-xs text-slate-400">{{ note.created_at|date:"d.m.Y H:i" }} · {{ note.author.get_full_name|default:note.author.username|default:"—" }}</p><p class="mt-1 whitespace-pre-line text-sm leading-6">{{ note.text }}</p></li>
+        {% empty %}<li class="text-sm text-slate-400">Hali izohlar yo‘q.</li>{% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <section class="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h3 class="font-bold">Vazifalar</h3><p class="mt-1 text-sm text-slate-500">Qo‘ng‘iroq, test-drayv yoki uchrashuvni rejalashtiring</p>
+    <form method="post" action="{% url 'customer-add-task' customer.pk %}" class="mt-4 space-y-3">
+      {% csrf_token %}
+      <div><label for="task-title" class="mb-1.5 block text-xs font-semibold text-slate-500">Vazifa</label><input id="task-title" name="title" required maxlength="200" class="field" placeholder="Test-drayvga taklif qilish"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label for="task-kind" class="mb-1.5 block text-xs font-semibold text-slate-500">Turi</label><select id="task-kind" name="kind" class="field">{% for value, label in task_kinds %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+        <div><label for="task-due" class="mb-1.5 block text-xs font-semibold text-slate-500">Muddat</label><input id="task-due" name="due_at" type="datetime-local" required class="field"></div>
+      </div>
+      {% if can_manage_all %}<div><label for="task-assignee" class="mb-1.5 block text-xs font-semibold text-slate-500">Mas’ul</label><select id="task-assignee" name="assignee" class="field">{% for manager in managers %}<option value="{{ manager.pk }}"{% if manager.pk == request.user.pk %} selected{% endif %}>{{ manager.get_full_name|default:manager.username }}</option>{% endfor %}</select></div>{% endif %}
+      <button type="submit" class="w-full rounded-xl bg-toyota px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">+ Vazifa qo‘shish</button>
+    </form>
+    <ul class="mt-5 space-y-3">
+      {% for task in customer_tasks %}
+      <li class="rounded-xl border px-4 py-3 {% if task.is_done %}border-slate-100 bg-slate-50{% elif task.is_overdue %}border-red-200 bg-red-50{% else %}border-slate-200{% endif %}">
+        <div class="flex items-start justify-between gap-3">
+          <div><p class="text-sm font-semibold {% if task.is_done %}text-slate-400 line-through{% endif %}">{{ task.title }}</p><p class="mt-1 text-xs {% if task.is_overdue %}font-bold text-red-700{% else %}text-slate-500{% endif %}">{{ task.get_kind_display }} · {{ task.due_at|date:"d.m.Y H:i" }} · {{ task.assignee.get_full_name|default:task.assignee.username }}{% if task.is_overdue %} · muddati o‘tgan{% endif %}</p></div>
+          {% if can_manage_all or task.assignee_id == request.user.pk %}<form method="post" action="{% url 'task-toggle' task.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'customer-detail' customer.pk %}"><button type="submit" class="shrink-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold hover:bg-slate-100">{% if task.is_done %}Qayta ochish{% else %}✓{% endif %}</button></form>{% endif %}
+        </div>
+      </li>
+      {% empty %}<li class="text-sm text-slate-400">Vazifalar yo‘q.</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

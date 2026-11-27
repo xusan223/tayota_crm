@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Toyota CRM | Dilerlik markazi{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23EB0A1E'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Arial' font-weight='900' font-size='20' fill='white'%3ET%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{% static 'crm/css/app.css' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-ink antialiased">
+  <div class="min-h-screen lg:flex">
+    <aside class="flex w-full flex-col bg-ink text-white lg:fixed lg:inset-y-0 lg:w-64">
+      <a href="{% url 'dashboard' %}" class="flex items-center gap-3 border-b border-white/10 px-6 py-6">
+        <div class="grid h-10 w-10 place-items-center rounded-xl bg-toyota text-lg font-black">T</div>
+        <div><p class="font-bold tracking-wide">TOYOTA</p><p class="text-xs text-white/55">Dilerlik CRM</p></div>
+      </a>
+      <nav class="flex gap-2 overflow-x-auto p-4 lg:flex-col" aria-label="Asosiy menyu">
+        <a href="{% url 'dashboard' %}#dashboard" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="dashboard">▦ <span>Dashboard</span></a>
+        <a href="{% url 'dashboard' %}#kanban" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="kanban">▤ <span>Sotuv voronkasi</span></a>
+        <a href="{% url 'dashboard' %}#customers" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="customers">♙ <span>Mijozlar</span></a>
+        <a href="{% url 'dashboard' %}#tasks" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="tasks">✓ <span>Vazifalar</span>{% if open_task_count %}<span class="ml-auto rounded-full bg-white/15 px-2 py-0.5 text-xs">{{ open_task_count }}</span>{% endif %}</a>
+        <a href="{% url 'dashboard' %}#inventory" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="inventory">◈ <span>Avto ombori</span></a>
+        {% if role == "director" %}<a href="{% url 'dashboard' %}#kpi" class="nav-tab flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-white/70 hover:bg-white/10" data-tab="kpi">▥ <span>KPI ko‘rsatkichlari</span></a>{% endif %}
+      </nav>
+      <div class="mt-auto hidden border-t border-white/10 p-5 text-xs text-white/45 lg:block">Toyota dilerlik markazi<br>CRM boshqaruv tizimi</div>
+    </aside>
+
+    <main class="min-w-0 flex-1 lg:ml-64">
+      <header class="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur md:px-8">
+        <div><p class="text-xs font-semibold uppercase tracking-[.18em] text-toyota">Dilerlik markazi</p><h1 id="page-title" class="mt-1 text-lg font-bold md:text-xl">{% block page_title %}Dashboard{% endblock %}</h1></div>
+        <div class="flex items-center gap-3">
+          <span class="hidden rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-toyota md:inline-flex">{{ role_label }}</span>
+          <span class="hidden text-sm font-medium text-slate-600 sm:inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+          {% if is_administrator %}<a href="{% url 'admin:index' %}" class="hidden rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:inline-flex">Admin panel</a>{% endif %}
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Chiqish</button>
+          </form>
+          <button type="button" data-open-modal class="rounded-xl bg-toyota px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700">+ Yangi lid</button>
+        </div>
+      </header>
+
+      <div class="mx-auto max-w-7xl p-5 md:p-8">
+        {% if messages %}
+          <div class="mb-5 space-y-2">
+            {% for message in messages %}
+              <div class="rounded-xl border px-4 py-3 text-sm {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800{% else %}border-green-200 bg-green-50 text-green-800{% endif %}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <div id="lead-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-ink/60 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+      <div class="mb-6 flex items-start justify-between"><div><h2 id="modal-title" class="text-xl font-extrabold">Yangi mijoz va lid</h2><p class="mt-1 text-sm text-slate-500">Mijoz ma’lumotlarini kiriting</p></div><button type="button" data-close-modal aria-label="Yopish" class="rounded-lg px-2 py-1 text-2xl leading-none text-slate-400 hover:bg-slate-100">×</button></div>
+      <form method="post" action="{% url 'dashboard' %}" class="space-y-4">
+        {% csrf_token %}
+        <div><label for="name" class="mb-1.5 block text-sm font-semibold">Ism-familiya</label><input id="name" name="name" required maxlength="150" class="field" placeholder="Masalan, Ali Valiyev"></div>
+        <div><label for="phone" class="mb-1.5 block text-sm font-semibold">Telefon raqami</label><input id="phone" name="phone" type="tel" required maxlength="30" class="field" placeholder="+998 90 123 45 67"></div>
+        <div><label for="interested_car" class="mb-1.5 block text-sm font-semibold">Qiziqqan avtomobil</label><select id="interested_car" name="interested_car" class="field"><option value="">Hozircha tanlanmagan</option>{% for car in cars %}<option value="{{ car.pk }}">{{ car.model_name }} — {{ car.color }} ({{ car.price|floatformat:0 }} so‘m)</option>{% endfor %}</select></div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          {% if can_assign_deals %}
+          <div><label for="manager" class="mb-1.5 block text-sm font-semibold">Mas’ul menejer</label><select id="manager" name="manager" required class="field"><option value="">Menejer tanlang</option>{% for manager in managers %}<option value="{{ manager.pk }}">{{ manager.get_full_name|default:manager.username }}</option>{% endfor %}</select></div>
+          {% else %}
+          <div><label class="mb-1.5 block text-sm font-semibold">Mas’ul xodim</label><p class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{{ request.user.get_full_name|default:request.user.username }}</p></div>
+          {% endif %}
+          <div><label for="total_price" class="mb-1.5 block text-sm font-semibold">Bitim summasi (so‘m)</label><input id="total_price" name="total_price" type="number" min="0" step="0.01" required class="field" placeholder="0"></div>
+        </div>
+        <p class="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-500">Yangi bitim “Yangi Lid” bosqichida ochiladi. Xodimlar faqat o‘z bitimlarini ko‘radi; direktor barcha bitimlarni kuzatadi va mas’ul menejerni belgilaydi. Administrator xodimlar rolini admin paneldan tayinlaydi.</p>
+        <div class="flex justify-end gap-3 pt-2"><button type="button" data-close-modal class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Bekor qilish</button><button type="submit" class="rounded-xl bg-toyota px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700">Saqlash</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{% static 'crm/js/app.js' %}?v=3" defer></script>
+</body>
+</html>

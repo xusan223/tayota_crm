@@ -1,10 +1,12 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
-from crm.models import Car, Customer, Deal
+from crm.models import Car, Customer, Deal, Note, Task
 
 
 class Command(BaseCommand):
@@ -113,6 +115,34 @@ class Command(BaseCommand):
             if created:
                 customer_count += 1
             sequence += 1
+
+        now = timezone.now()
+        sample_activity = [
+            ("+998900000101", "Camry bo‘yicha narx so‘radi, katalog yuborildi.",
+             Task.Kind.CALL, "Kreditsiz to‘lov variantini aytib qayta qo‘ng‘iroq qilish", 1),
+            ("+998900000102", "Qo‘ng‘iroq qilindi: RAV4 qora rangda qiziqtiradi.",
+             Task.Kind.TEST_DRIVE, "RAV4 test-drayviga taklif qilish", 2),
+            ("+998900000103", "Test-drayv o‘tkazildi, mijoz mamnun.",
+             Task.Kind.MEETING, "Shartnoma shartlarini kelishish uchun uchrashuv", 3),
+            ("+998900000104", "Shartnoma imzolandi, to‘lov kutilmoqda.",
+             Task.Kind.CALL, "To‘lov holatini tekshirish", -1),
+        ]
+        for phone, note_text, kind, title, days in sample_activity:
+            customer = Customer.objects.filter(phone=phone).first()
+            if customer is None:
+                continue
+            Note.objects.get_or_create(
+                customer=customer, text=note_text, defaults={"author": manager}
+            )
+            Task.objects.get_or_create(
+                customer=customer,
+                title=title,
+                defaults={
+                    "assignee": manager,
+                    "kind": kind,
+                    "due_at": now + timedelta(days=days),
+                },
+            )
 
         self.stdout.write(
             self.style.SUCCESS(

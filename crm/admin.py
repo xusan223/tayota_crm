@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Car, Customer, Deal, StaffProfile, get_staff_role
+from .models import Car, Customer, Deal, Document, Note, StaffProfile, Task, get_staff_role
 
 
 def is_crm_administrator(user):
@@ -70,3 +70,24 @@ class DealAdmin(AdministratorOnlyAdmin, admin.ModelAdmin):
     list_display = ("customer", "manager", "stage", "total_price")
     list_filter = ("stage", "manager")
     search_fields = ("customer__name", "customer__phone", "manager__username")
+
+
+@admin.register(Note)
+class NoteAdmin(AdministratorOnlyAdmin, admin.ModelAdmin):
+    list_display = ("customer", "author", "created_at")
+    search_fields = ("customer__name", "text")
+    date_hierarchy = "created_at"
+
+
+@admin.register(Task)
+class TaskAdmin(AdministratorOnlyAdmin, admin.ModelAdmin):
+    list_display = ("title", "customer", "kind", "assignee", "due_at", "is_done")
+    list_filter = ("is_done", "kind", "assignee")
+    search_fields = ("title", "customer__name")
+
+
+@admin.register(Document)
+class DocumentAdmin(AdministratorOnlyAdmin, admin.ModelAdmin):
+    list_display = ("title", "deal", "kind", "size", "created_by", "created_at")
+    list_filter = ("kind",)
+    search_fields = ("title", "deal__customer__name")
