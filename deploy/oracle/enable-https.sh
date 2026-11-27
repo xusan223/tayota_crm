@@ -24,5 +24,9 @@ sed -i 's/^DJANGO_SECURE_SSL_REDIRECT=.*/DJANGO_SECURE_SSL_REDIRECT=True/' "$ENV
 systemctl restart tayota-crm.service
 systemctl reload nginx
 
+for _ in $(seq 1 20); do
+  curl -fsS "https://$SERVER_NAME/health/" >/dev/null 2>&1 && break
+  sleep 1
+done
 curl -fsS "https://$SERVER_NAME/health/" && echo
 echo "HTTPS enabled: https://$SERVER_NAME/"
