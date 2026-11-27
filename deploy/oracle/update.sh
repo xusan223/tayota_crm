@@ -10,6 +10,10 @@ install -m 755 "$APP_DIR/deploy/oracle/tayota-backup" /usr/local/bin/tayota-back
 tayota-manage migrate --noinput
 tayota-manage collectstatic --noinput -v 0
 systemctl restart tayota-crm.service
-sleep 2
-curl -fsS -H "Host: $(grep '^DJANGO_ALLOWED_HOSTS=' /etc/tayota-crm.env | cut -d= -f2 | cut -d, -f1)" http://127.0.0.1/health/ && echo
+host=$(grep '^DJANGO_ALLOWED_HOSTS=' /etc/tayota-crm.env | cut -d= -f2 | cut -d, -f1)
+for _ in $(seq 1 20); do
+  curl -fsS --resolve "$host:443:127.0.0.1" "https://$host/health/" >/dev/null 2>&1 && break
+  sleep 1
+done
+curl -fsS --resolve "$host:443:127.0.0.1" "https://$host/health/" && echo
 echo "Updated to $(sudo -u crm git -C "$APP_DIR" log -1 --format='%h %s')"
