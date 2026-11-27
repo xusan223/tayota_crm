@@ -8,7 +8,7 @@ User=crm
 Group=crm
 WorkingDirectory=/srv/tayota_crm
 EnvironmentFile=/etc/tayota-crm.env
-ExecStart=/srv/tayota_crm/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 --access-logfile - --error-logfile - tayota_crm.wsgi:application
+ExecStart=/srv/tayota_crm/.venv/bin/gunicorn --workers 2 --bind 127.0.0.1:8000 --access-logfile - --error-logfile - tayota_crm.wsgi:application
 Restart=on-failure
 RestartSec=3
 
