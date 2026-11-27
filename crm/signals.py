@@ -6,8 +6,10 @@ from .models import StaffProfile
 
    
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_staff_profile(sender, instance, created, **kwargs):
-    if created:
+def create_staff_profile(sender, instance, created, raw=False, **kwargs):
+    # ``raw`` saves come from loaddata: the fixture carries the user's real
+    # profile, so creating a default one here would collide with it.
+    if created and not raw:
         role = (
             StaffProfile.Role.ADMINISTRATOR
             if instance.is_superuser

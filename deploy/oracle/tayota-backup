@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Nightly backup: PostgreSQL dump + invoice files, kept 14 days on the server.
+# When BACKUP_PAR_URL is set (an Object Storage pre-authenticated request
+# that allows object writes), each backup is also copied off the server.
+set -euo pipefail
+set -a; . /etc/tayota-crm.env; set +a
+
+dir=/var/lib/tayota-crm/backups
+stamp=$(date -u +%Y-%m-%dT%H%M%SZ)
+umask 077
+
+sudo -u crm pg_dump --no-owner tayotacrm | gzip > "$dir/db-$stamp.sql.gz"
+tar -czf "$dir/media-$stamp.tar.gz" -C /var/lib/tayota-crm media
+chown crm:crm "$dir"/*-"$stamp".*
+
+if [[ -n "${BACKUP_PAR_URL:-}" ]]; then
+  for file in "$dir/db-$stamp.sql.gz" "$dir/media-$stamp.tar.gz"; do
+    curl -fsS --retry 3 -T "$file" "${BACKUP_PAR_URL}$(basename "$file")"
+  done
+  echo "Copied to Object Storage"
+fi
+
+find "$dir" -type f -mtime +14 -delete
+echo "Backup written: db-$stamp.sql.gz, media-$stamp.tar.gz"

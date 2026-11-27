@@ -1,0 +1,7 @@
+[Unit]
+Description=Toyota CRM nightly backup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/tayota-backup

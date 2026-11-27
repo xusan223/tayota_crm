@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Toyota CRM backup at 02:00 Asia/Tashkent
+
+[Timer]
+OnCalendar=*-*-* 21:00:00 UTC
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

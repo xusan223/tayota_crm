@@ -114,7 +114,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 WHITENOISE_USE_FINDERS = DEBUG
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT") or BASE_DIR / "media")
 
 # Generated documents (invoice PDFs) go to a private S3 bucket when one is
 # configured. On AWS the EC2 instance role supplies the credentials, so no

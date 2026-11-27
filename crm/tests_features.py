@@ -420,6 +420,38 @@ class ExcelExportTests(CrmFeatureTestBase):
         self.assertEqual(workbook["Bitimlar"].max_row, 3)
 
 
+class DataMigrationTests(CrmFeatureTestBase):
+    """The move between servers is dumpdata on the old one, loaddata on the new."""
+
+    def test_dump_and_load_keeps_users_roles_and_deals(self):
+        Note.objects.create(customer=self.customer, author=self.employee, text="Izoh")
+        with tempfile.TemporaryDirectory(prefix="crm-dump-") as folder:
+            dump_path = f"{folder}/data.json"
+            call_command(
+                "dumpdata",
+                "--natural-foreign",
+                "--natural-primary",
+                "--exclude", "contenttypes",
+                "--exclude", "auth.permission",
+                "--exclude", "sessions",
+                "--exclude", "admin.logentry",
+                output=dump_path,
+                verbosity=0,
+            )
+            Deal.objects.all().delete()
+            Customer.objects.all().delete()
+            Car.objects.all().delete()
+            get_user_model().objects.all().delete()
+
+            call_command("loaddata", dump_path, verbosity=0)
+
+        director = get_user_model().objects.get(username="director")
+        self.assertEqual(director.staff_profile.role, StaffProfile.Role.DIRECTOR)
+        self.assertEqual(StaffProfile.objects.count(), 3)
+        self.assertEqual(Deal.objects.count(), 2)
+        self.assertEqual(Note.objects.get().author.username, "employee")
+
+
 class SeedActivityTests(TestCase):
     def test_seed_adds_sample_notes_and_tasks_once(self):
         call_command("seed_demo_data", verbosity=0)

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Run a Django management command as the app user with the app's settings:
+#   sudo tayota-manage migrate
+set -euo pipefail
+exec sudo -u crm bash -c '
+  set -a; . /etc/tayota-crm.env; set +a
+  cd /srv/tayota_crm
+  exec .venv/bin/python manage.py "$@"
+' tayota-manage "$@"
